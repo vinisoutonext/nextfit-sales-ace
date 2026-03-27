@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -54,8 +57,14 @@ export default {
           "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
           accent: "hsl(var(--sidebar-accent))",
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
+          border: "hsl(var(--sidebar-border, var(--border)))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        chat: {
+          user: "hsl(var(--chat-user))",
+          "user-fg": "hsl(var(--chat-user-fg))",
+          ai: "hsl(var(--chat-ai))",
+          "ai-fg": "hsl(var(--chat-ai-fg))",
         },
       },
       borderRadius: {
