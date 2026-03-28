@@ -4,17 +4,18 @@ import { ChatInput } from "@/components/ChatInput";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import nextfitLogo from "@/assets/nextfit-logo.png";
+import { Sparkles } from "lucide-react";
 
 type Msg = { role: "user" | "assistant"; content: string; logId?: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nextfit-chat`;
 
 const SUGGESTIONS = [
-  "Como rebater objeção de preço?",
-  "Qual diferencial vs concorrência?",
-  "Como funciona o pitch de abertura?",
-  "Quais são os planos da Next Fit?",
-  "Como abordar academia de artes marciais?",
+  { text: "Como rebater objeção de preço?", emoji: "💰" },
+  { text: "Diferencial vs concorrência?", emoji: "⚔️" },
+  { text: "Pitch de abertura ideal?", emoji: "🎯" },
+  { text: "Abordar academia de artes marciais?", emoji: "🥋" },
+  { text: "Quais são os planos?", emoji: "📋" },
 ];
 
 export default function ChatPage() {
@@ -92,14 +93,13 @@ export default function ChatPage() {
         }
       }
 
-      // Log to DB and get ID for feedback
       if (assistantContent) {
         const { data, error } = await supabase
           .from("logs")
           .insert({ pergunta: input, resposta: assistantContent })
           .select("id")
           .single();
-        
+
         if (!error && data) {
           setMessages((prev) =>
             prev.map((m, i) =>
@@ -122,33 +122,48 @@ export default function ChatPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto chat-scroll">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <img
-              src={nextfitLogo}
-              alt="Next Fit"
-              width={48}
-              height={48}
-              className="rounded-xl mb-5"
-            />
-            <h2 className="font-display text-2xl font-extrabold text-foreground mb-2">
+            <div className="mb-6">
+              <div className="relative inline-flex items-center justify-center">
+                <div className="absolute inset-0 rounded-2xl bg-primary/5 scale-150" />
+                <img
+                  src={nextfitLogo}
+                  alt="Next Fit"
+                  width={52}
+                  height={52}
+                  className="rounded-2xl relative"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-primary/60" />
+              <span className="text-[11px] font-medium tracking-widest uppercase text-primary/60">
+                Mentor de Vendas
+              </span>
+            </div>
+
+            <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mb-2 leading-tight">
               Em que posso te ajudar?
             </h2>
-            <p className="text-muted font-light text-sm max-w-md mb-8">
-              Acesso direto ao playbook, objeções e concorrência da Next Fit
+            <p className="text-muted-foreground text-sm font-light max-w-sm mb-8 leading-relaxed">
+              Playbook, objeções, concorrência e produto — tudo na ponta dos dedos.
             </p>
-            <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-              {SUGGESTIONS.map((q) => (
+
+            <div className="flex flex-wrap justify-center gap-2 max-w-md">
+              {SUGGESTIONS.map((s) => (
                 <button
-                  key={q}
-                  onClick={() => handleSend(q)}
-                  className="text-sm px-4 py-2.5 rounded-full border border-chip-border bg-chip text-chip-text hover:border-primary font-normal"
+                  key={s.text}
+                  onClick={() => handleSend(s.text)}
+                  className="text-[13px] px-3.5 py-2 rounded-xl border border-chip-border bg-chip text-chip-text hover:border-primary hover:bg-primary/[0.08] font-normal inline-flex items-center gap-1.5"
                 >
-                  {q}
+                  <span>{s.emoji}</span>
+                  <span>{s.text}</span>
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto py-4">
+          <div className="max-w-2xl mx-auto py-4">
             {messages.map((msg, i) => (
               <ChatMessage key={i} role={msg.role} content={msg.content} logId={msg.logId} />
             ))}
