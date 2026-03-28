@@ -1,4 +1,4 @@
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import { useRef, useCallback, useState } from "react";
 import nextfitLogo from "@/assets/nextfit-logo.png";
 import { AdminDashboardModal } from "@/components/AdminDashboardModal";
@@ -6,7 +6,12 @@ import { AdminDashboardModal } from "@/components/AdminDashboardModal";
 const CLICKS_NEEDED = 11;
 const RESET_MS = 3000;
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function AppSidebar({ open, onClose }: AppSidebarProps) {
   const clickCount = useRef(0);
   const lastClick = useRef(0);
   const [showAdmin, setShowAdmin] = useState(false);
@@ -26,33 +31,68 @@ export function AppSidebar() {
 
   return (
     <>
-      <aside className="flex flex-col w-[210px] shrink-0 h-screen bg-primary">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-          <img
-            src={nextfitLogo}
-            alt="Next Fit"
-            width={32}
-            height={32}
-            className="rounded-lg object-contain cursor-pointer select-none"
-            onClick={handleLogoClick}
-            draggable={false}
-          />
-          <div>
-            <h1 className="font-display text-sm font-bold text-white tracking-tight">Next Fit</h1>
-            <p className="text-[11px] text-white/55 font-light">Assistente de Vendas</p>
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          className="sidebar-overlay fixed inset-0 bg-black/40 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={`
+          fixed md:relative z-50 flex flex-col w-[220px] shrink-0 h-screen bg-primary
+          transform transition-transform duration-200 ease-out
+          ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4">
+          <div className="flex items-center gap-3">
+            <img
+              src={nextfitLogo}
+              alt="Next Fit"
+              width={34}
+              height={34}
+              className="rounded-lg object-contain cursor-pointer select-none"
+              onClick={handleLogoClick}
+              draggable={false}
+            />
+            <div>
+              <h1 className="font-display text-[15px] font-bold text-white tracking-tight leading-tight">
+                Mentor
+              </h1>
+              <p className="text-[11px] text-white/50 font-light leading-tight">
+                Next Fit Sales AI
+              </p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
+
+        {/* Divider */}
+        <div className="mx-4 h-px bg-white/10" />
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4">
-          <button
-            className="flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/15"
-          >
-            <MessageSquare className="h-4 w-4 shrink-0" />
+          <button className="flex items-center gap-3 w-full rounded-xl px-3.5 py-2.5 text-[13px] font-medium text-white bg-white/[0.14] hover:bg-white/[0.18]">
+            <MessageSquare className="h-4 w-4 shrink-0 opacity-80" />
             <span>Chat de Vendas</span>
           </button>
         </nav>
+
+        {/* Footer */}
+        <div className="px-5 pb-5">
+          <div className="h-px bg-white/10 mb-3" />
+          <p className="text-[10px] text-white/30 font-light text-center">
+            Powered by Next Fit
+          </p>
+        </div>
       </aside>
 
       <AdminDashboardModal open={showAdmin} onClose={() => setShowAdmin(false)} />
