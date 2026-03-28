@@ -16,18 +16,24 @@ export type Database = {
     Tables: {
       logs: {
         Row: {
+          avaliacao: string | null
+          categoria: string | null
           created_at: string
           id: string
           pergunta: string
           resposta: string
         }
         Insert: {
+          avaliacao?: string | null
+          categoria?: string | null
           created_at?: string
           id?: string
           pergunta: string
           resposta: string
         }
         Update: {
+          avaliacao?: string | null
+          categoria?: string | null
           created_at?: string
           id?: string
           pergunta?: string
