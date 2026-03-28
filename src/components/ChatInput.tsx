@@ -32,30 +32,31 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t border-border bg-card p-4">
+    <div className="bg-background px-4 py-4">
       <div className="mx-auto max-w-3xl">
-        <div className="flex items-end gap-2 rounded-xl border border-border bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/20 focus-within:border-primary/40 transition-all">
+        <div
+          className="flex items-end gap-2 bg-card p-2 border border-border focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(107,45,139,0.12)]"
+          style={{ borderRadius: "14px" }}
+        >
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Pergunte sobre vendas, objeções, planos..."
-            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground min-h-[36px] max-h-[160px]"
+            placeholder="Pergunte sobre objeções, produto, concorrência..."
+            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted font-light min-h-[36px] max-h-[160px]"
             rows={1}
             disabled={disabled}
           />
           <button
             onClick={handleSubmit}
             disabled={!input.trim() || disabled}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex h-9 w-9 shrink-0 items-center justify-center bg-primary text-primary-foreground hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ borderRadius: "10px" }}
           >
             <SendHorizontal className="h-4 w-4" />
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          IA treinada com a base de conhecimento Next Fit. Respostas podem conter imprecisões.
-        </p>
       </div>
     </div>
   );

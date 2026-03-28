@@ -1,34 +1,79 @@
-import { Bot, User } from "lucide-react";
+import { useState } from "react";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import nextfitLogo from "@/assets/nextfit-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
+  logId?: string;
 }
 
-export function ChatMessage({ role, content }: ChatMessageProps) {
+export function ChatMessage({ role, content, logId }: ChatMessageProps) {
   const isUser = role === "user";
+  const [feedback, setFeedback] = useState<"positivo" | "negativo" | null>(null);
+
+  const handleFeedback = async (value: "positivo" | "negativo") => {
+    if (feedback || !logId) return;
+    setFeedback(value);
+    await supabase.from("logs").update({ avaliacao: value }).eq("id", logId);
+  };
+
+  if (isUser) {
+    return (
+      <div className="animate-message-in flex justify-end px-4 py-2.5">
+        <div
+          className="max-w-[80%] px-4 py-3 text-sm text-primary-foreground bg-primary"
+          style={{ borderRadius: "16px 4px 16px 16px" }}
+        >
+          {content}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`animate-message-in flex gap-3 px-4 py-4 ${isUser ? "" : "bg-chat-ai/40"}`}>
-      <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-          isUser ? "bg-primary" : "bg-muted border border-border"
-        }`}
-      >
-        {isUser ? (
-          <User className="h-4 w-4 text-primary-foreground" />
-        ) : (
-          <Bot className="h-4 w-4 text-foreground" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0 pt-0.5">
-        <p className="text-xs font-medium text-muted-foreground mb-1">
-          {isUser ? "Você" : "Next Fit AI"}
-        </p>
-        <div className="prose prose-sm max-w-none text-foreground prose-p:leading-relaxed prose-p:my-1 prose-headings:text-foreground prose-strong:text-foreground prose-ul:my-1 prose-li:my-0">
-          <ReactMarkdown>{content}</ReactMarkdown>
+    <div className="animate-message-in flex gap-2.5 px-4 py-2.5 group">
+      <img
+        src={nextfitLogo}
+        alt="Next Fit AI"
+        width={28}
+        height={28}
+        className="rounded-md object-contain shrink-0 mt-0.5"
+      />
+      <div className="flex flex-col min-w-0 max-w-[80%]">
+        <div
+          className="px-4 py-3 bg-card border border-border text-sm text-foreground"
+          style={{ borderRadius: "4px 16px 16px 16px" }}
+        >
+          <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-p:my-1 prose-headings:text-foreground prose-headings:font-display prose-strong:text-primary prose-ul:my-1 prose-li:my-0">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
         </div>
+        {/* Feedback buttons */}
+        {logId && (
+          <div className={`flex gap-1 mt-1 ml-1 ${feedback ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+            <button
+              onClick={() => handleFeedback("positivo")}
+              disabled={!!feedback}
+              className={`p-1 rounded transition-colors ${
+                feedback === "positivo" ? "text-primary" : "text-muted hover:text-foreground"
+              } disabled:cursor-default`}
+            >
+              <ThumbsUp className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => handleFeedback("negativo")}
+              disabled={!!feedback}
+              className={`p-1 rounded transition-colors ${
+                feedback === "negativo" ? "text-primary" : "text-muted hover:text-foreground"
+              } disabled:cursor-default`}
+            >
+              <ThumbsDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -36,14 +81,21 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
 
 export function TypingIndicator() {
   return (
-    <div className="animate-message-in flex gap-3 px-4 py-4 bg-chat-ai/40">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted border border-border">
-        <Bot className="h-4 w-4 text-foreground" />
-      </div>
-      <div className="flex items-center gap-1 pt-2">
-        <span className="typing-dot h-2 w-2 rounded-full bg-muted-foreground" />
-        <span className="typing-dot h-2 w-2 rounded-full bg-muted-foreground" />
-        <span className="typing-dot h-2 w-2 rounded-full bg-muted-foreground" />
+    <div className="animate-message-in flex gap-2.5 px-4 py-2.5">
+      <img
+        src={nextfitLogo}
+        alt="Next Fit AI"
+        width={28}
+        height={28}
+        className="rounded-md object-contain shrink-0 mt-0.5"
+      />
+      <div
+        className="flex items-center gap-1.5 px-4 py-3 bg-card border border-border"
+        style={{ borderRadius: "4px 16px 16px 16px" }}
+      >
+        <span className="typing-dot h-2 w-2 rounded-full bg-primary" />
+        <span className="typing-dot h-2 w-2 rounded-full bg-primary" />
+        <span className="typing-dot h-2 w-2 rounded-full bg-primary" />
       </div>
     </div>
   );
