@@ -2,59 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 25% 10%;
+    --background: 48 11% 97%;
+    --foreground: 240 33% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 240 33% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 240 33% 14%;
 
-    --primary: 152 56% 42%;
+    --primary: 278 51% 36%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 278 48% 46%;
 
-    --secondary: 220 16% 93%;
-    --secondary-foreground: 220 25% 15%;
+    --secondary: 270 30% 95%;
+    --secondary-foreground: 278 51% 36%;
 
-    --muted: 220 16% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 240 7% 56%;
+    --muted-foreground: 240 7% 56%;
 
-    --accent: 152 40% 94%;
-    --accent-foreground: 152 56% 28%;
+    --accent: 270 30% 95%;
+    --accent-foreground: 278 51% 36%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 16% 90%;
-    --input: 220 16% 90%;
-    --ring: 152 56% 42%;
+    --border: 240 9% 90%;
+    --input: 240 9% 90%;
+    --ring: 278 51% 36%;
 
     --radius: 0.75rem;
 
-    --sidebar-bg: 220 30% 12%;
-    --sidebar-fg: 220 10% 80%;
-    --sidebar-active: 152 56% 42%;
-    --sidebar-active-fg: 0 0% 100%;
-    --sidebar-hover: 220 25% 18%;
-    --sidebar-border: 220 25% 18%;
+    --chip-bg: 270 30% 95%;
+    --chip-border: 278 48% 80%;
+    --chip-text: 278 51% 36%;
 
-    --chat-user: 152 56% 42%;
-    --chat-user-fg: 0 0% 100%;
-    --chat-ai: 220 16% 96%;
-    --chat-ai-fg: 220 25% 10%;
-
-    --sidebar-background: 220 30% 12%;
-    --sidebar-foreground: 220 10% 80%;
-    --sidebar-primary: 152 56% 42%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 25% 18%;
-    --sidebar-accent-foreground: 220 10% 90%;
-    --sidebar-ring: 152 56% 42%;
+    --sidebar-background: 278 51% 36%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 278 51% 36%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-ring: 0 0% 100%;
   }
 }
 
@@ -64,12 +57,26 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Syne', sans-serif;
   }
 }
 
-/* Custom scrollbar */
+/* Hidden scrollbar for chat */
+.chat-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chat-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scrollbar for other areas */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -77,11 +84,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(220 16% 80%);
+  background: hsl(240 9% 85%);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220 16% 70%);
+  background: hsl(240 9% 75%);
 }
 
 /* Chat message animations */
@@ -111,3 +118,14 @@
 }
 .typing-dot:nth-child(2) { animation-delay: 0.16s; }
 .typing-dot:nth-child(3) { animation-delay: 0.32s; }
+
+/* All transitions 200ms */
+* {
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+/* Override for elements that shouldn't have transitions */
+input, textarea, button, a {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+}

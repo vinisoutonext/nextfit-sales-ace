@@ -3,11 +3,19 @@ import { ChatMessage, TypingIndicator } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MessageSquare } from "lucide-react";
+import nextfitLogo from "@/assets/nextfit-logo.png";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; logId?: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nextfit-chat`;
+
+const SUGGESTIONS = [
+  "Como rebater objeção de preço?",
+  "Qual diferencial vs concorrência?",
+  "Como funciona o pitch de abertura?",
+  "Quais são os planos da Next Fit?",
+  "Como abordar academia de artes marciais?",
+];
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -27,21 +35,21 @@ export default function ChatPage() {
 
     let assistantContent = "";
 
-    const updateAssistant = (chunk: string) => {
+    const updateAssistant = (chunk: string, logId?: string) => {
       assistantContent += chunk;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
-        if (last?.role === "assistant") {
+        if (last?.role === "assistant" && !last.logId) {
           return prev.map((m, i) =>
-            i === prev.length - 1 ? { ...m, content: assistantContent } : m
+            i === prev.length - 1 ? { ...m, content: assistantContent, logId } : m
           );
         }
-        return [...prev, { role: "assistant", content: assistantContent }];
+        return [...prev, { role: "assistant", content: assistantContent, logId }];
       });
     };
 
     try {
-      const allMessages = [...messages, userMsg];
+      const allMessages = [...messages, userMsg].map(({ role, content }) => ({ role, content }));
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
@@ -84,14 +92,21 @@ export default function ChatPage() {
         }
       }
 
-      // Log to Supabase
+      // Log to DB and get ID for feedback
       if (assistantContent) {
-        supabase.from("logs").insert({
-          pergunta: input,
-          resposta: assistantContent,
-        }).then(({ error }) => {
-          if (error) console.error("Log error:", error);
-        });
+        const { data, error } = await supabase
+          .from("logs")
+          .insert({ pergunta: input, resposta: assistantContent })
+          .select("id")
+          .single();
+        
+        if (!error && data) {
+          setMessages((prev) =>
+            prev.map((m, i) =>
+              i === prev.length - 1 && m.role === "assistant" ? { ...m, logId: data.id } : m
+            )
+          );
+        }
       }
     } catch (e) {
       console.error(e);
@@ -103,28 +118,29 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+    <div className="flex flex-col h-full bg-background">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto chat-scroll">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
-              <MessageSquare className="h-8 w-8 text-primary" />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Assistente de Vendas Next Fit</h2>
-            <p className="text-muted-foreground text-sm max-w-md">
-              Tire dúvidas sobre planos, objeções, técnicas de vendas e muito mais. Estou aqui para ajudar você a fechar mais vendas!
+            <img
+              src={nextfitLogo}
+              alt="Next Fit"
+              width={48}
+              height={48}
+              className="rounded-xl mb-5"
+            />
+            <h2 className="font-display text-2xl font-extrabold text-foreground mb-2">
+              Em que posso te ajudar?
+            </h2>
+            <p className="text-muted font-light text-sm max-w-md mb-8">
+              Acesso direto ao playbook, objeções e concorrência da Next Fit
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 max-w-lg">
-              {[
-                "Como contornar a objeção de preço?",
-                "Quais são os planos disponíveis?",
-                "Como fazer um bom rapport?",
-                "Dicas para follow-up eficiente",
-              ].map((q) => (
+            <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+              {SUGGESTIONS.map((q) => (
                 <button
                   key={q}
                   onClick={() => handleSend(q)}
-                  className="text-left text-sm px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-foreground"
+                  className="text-sm px-4 py-2.5 rounded-full border border-chip-border bg-chip text-chip-text hover:border-primary font-normal"
                 >
                   {q}
                 </button>
@@ -132,9 +148,9 @@ export default function ChatPage() {
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto py-4">
             {messages.map((msg, i) => (
-              <ChatMessage key={i} role={msg.role} content={msg.content} />
+              <ChatMessage key={i} role={msg.role} content={msg.content} logId={msg.logId} />
             ))}
             {isLoading && !messages.some((m, i) => m.role === "assistant" && i === messages.length - 1) && (
               <TypingIndicator />
