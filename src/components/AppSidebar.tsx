@@ -1,7 +1,7 @@
 import { MessageSquare, X } from "lucide-react";
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import nextfitLogo from "@/assets/nextfit-logo.png";
-import { AdminDashboardModal } from "@/components/AdminDashboardModal";
 
 const CLICKS_NEEDED = 11;
 const RESET_MS = 3000;
@@ -12,9 +12,9 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ open, onClose }: AppSidebarProps) {
+  const navigate = useNavigate();
   const clickCount = useRef(0);
   const lastClick = useRef(0);
-  const [showAdmin, setShowAdmin] = useState(false);
 
   const handleLogoClick = useCallback(() => {
     const now = Date.now();
@@ -25,7 +25,7 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
     clickCount.current += 1;
     if (clickCount.current >= CLICKS_NEEDED) {
       clickCount.current = 0;
-      setShowAdmin(true);
+      navigate("/admin");
     }
   }, []);
 
@@ -95,7 +95,6 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
         </div>
       </aside>
 
-      <AdminDashboardModal open={showAdmin} onClose={() => setShowAdmin(false)} />
     </>
   );
 }
