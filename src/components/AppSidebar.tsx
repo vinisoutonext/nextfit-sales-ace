@@ -12,9 +12,9 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ open, onClose }: AppSidebarProps) {
+  const navigate = useNavigate();
   const clickCount = useRef(0);
   const lastClick = useRef(0);
-  const [showAdmin, setShowAdmin] = useState(false);
 
   const handleLogoClick = useCallback(() => {
     const now = Date.now();
