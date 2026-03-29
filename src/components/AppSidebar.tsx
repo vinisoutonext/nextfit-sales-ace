@@ -1,7 +1,7 @@
 import { MessageSquare, X } from "lucide-react";
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import nextfitLogo from "@/assets/nextfit-logo.png";
-import { AdminDashboardModal } from "@/components/AdminDashboardModal";
 
 const CLICKS_NEEDED = 11;
 const RESET_MS = 3000;
