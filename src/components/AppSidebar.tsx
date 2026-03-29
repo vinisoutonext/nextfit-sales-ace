@@ -25,7 +25,7 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
     clickCount.current += 1;
     if (clickCount.current >= CLICKS_NEEDED) {
       clickCount.current = 0;
-      setShowAdmin(true);
+      navigate("/admin");
     }
   }, []);
 
@@ -95,7 +95,6 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
         </div>
       </aside>
 
-      <AdminDashboardModal open={showAdmin} onClose={() => setShowAdmin(false)} />
     </>
   );
 }
