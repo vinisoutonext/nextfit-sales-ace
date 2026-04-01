@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChatMessage, TypingIndicator } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import nextfitLogo from "@/assets/nextfit-logo.png";
 import { Sparkles } from "lucide-react";
@@ -11,14 +12,12 @@ type Msg = { role: "user" | "assistant"; content: string; logId?: string };
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nextfit-chat`;
 
 const SUGGESTIONS = [
-  { text: "Como rebater objeção de preço?", emoji: "💰" },
-  { text: "Diferencial vs concorrência?", emoji: "⚔️" },
-  { text: "Pitch de abertura ideal?", emoji: "🎯" },
-  { text: "Abordar academia de artes marciais?", emoji: "🥋" },
-  { text: "Quais são os planos?", emoji: "📋" },
+  { text: "Quais são os principais diferenciais da Next Fit?", emoji: "🚀" },
+  { text: "O que falar no começo de uma ligação?", emoji: "📞" },
 ];
 
 export default function ChatPage() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -96,7 +95,7 @@ export default function ChatPage() {
       if (assistantContent) {
         const { data, error } = await supabase
           .from("logs")
-          .insert({ pergunta: input, resposta: assistantContent })
+          .insert({ pergunta: input, resposta: assistantContent, user_id: user?.id })
           .select("id")
           .single();
 
