@@ -11,11 +11,8 @@ type Msg = { role: "user" | "assistant"; content: string; logId?: string };
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nextfit-chat`;
 
 const SUGGESTIONS = [
-  { text: "Como rebater objeção de preço?", emoji: "💰" },
-  { text: "Diferencial vs concorrência?", emoji: "⚔️" },
-  { text: "Pitch de abertura ideal?", emoji: "🎯" },
-  { text: "Abordar academia de artes marciais?", emoji: "🥋" },
-  { text: "Quais são os planos?", emoji: "📋" },
+  { text: "Quais são os principais diferenciais da Next Fit?", emoji: "🚀" },
+  { text: "O que falar no começo de uma ligação?", emoji: "📞" },
 ];
 
 export default function ChatPage() {
