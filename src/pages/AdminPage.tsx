@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Download, AlertTriangle, Search, Lock, ArrowLeft, TrendingUp, MessageSquare, BarChart3, ThumbsUp } from "lucide-react";
+import { Download, AlertTriangle, Search, Lock, ArrowLeft, TrendingUp, MessageSquare, BarChart3, ThumbsUp, ChevronLeft, ChevronRight, Users, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -10,12 +10,20 @@ interface LogEntry {
   avaliacao: string | null;
   categoria: string | null;
   created_at: string;
+  user_id: string | null;
+}
+
+interface Profile {
+  id: string;
+  nome: string;
+  email: string;
 }
 
 type Period = "today" | "week" | "month" | "all";
 
 const ADMIN_PASSWORD = "123456";
 const SESSION_KEY = "nf_admin_auth";
+const PAGE_SIZE = 10;
 
 const CATEGORY_TAGS: Record<string, { bg: string; text: string }> = {
   "Objeção": { bg: "#FEF3C7", text: "#92400E" },
@@ -40,23 +48,25 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<Period>("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [selectedUser, setSelectedUser] = useState<string>("all");
 
   useEffect(() => {
     if (authenticated) {
       sessionStorage.setItem(SESSION_KEY, "true");
       setLoading(true);
-      supabase
-        .from("logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1000)
-        .then(({ data }) => {
-          setLogs((data as LogEntry[]) || []);
-          setLoading(false);
-        });
+      Promise.all([
+        supabase.from("logs").select("*").order("created_at", { ascending: false }).limit(1000),
+        supabase.from("profiles").select("*"),
+      ]).then(([logsRes, profilesRes]) => {
+        setLogs((logsRes.data as LogEntry[]) || []);
+        setProfiles((profilesRes.data as Profile[]) || []);
+        setLoading(false);
+      });
     }
   }, [authenticated]);
 
@@ -69,6 +79,12 @@ export default function AdminPage() {
     }
   };
 
+  const profileMap = useMemo(() => {
+    const m: Record<string, Profile> = {};
+    profiles.forEach((p) => { m[p.id] = p; });
+    return m;
+  }, [profiles]);
+
   const filtered = useMemo(() => {
     const now = new Date();
     return logs.filter((l) => {
@@ -77,8 +93,11 @@ export default function AdminPage() {
       if (period === "week") return d > new Date(now.getTime() - 7 * 86400000);
       if (period === "month") return d > new Date(now.getTime() - 30 * 86400000);
       return true;
+    }).filter((l) => {
+      if (selectedUser === "all") return true;
+      return l.user_id === selectedUser;
     });
-  }, [logs, period]);
+  }, [logs, period, selectedUser]);
 
   const categorized = useMemo(() => {
     return filtered.map((l) => ({
@@ -94,6 +113,12 @@ export default function AdminPage() {
       (l) => l.pergunta.toLowerCase().includes(q) || l.resposta.toLowerCase().includes(q)
     );
   }, [categorized, search]);
+
+  // Reset page on filter change
+  useEffect(() => { setPage(0); }, [search, period, selectedUser]);
+
+  const totalPages = Math.ceil(searched.length / PAGE_SIZE);
+  const paginatedLogs = searched.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const metrics = useMemo(() => {
     const cats = new Set(categorized.map((l) => l._cat));
@@ -134,13 +159,34 @@ export default function AdminPage() {
       .map(([q, d]) => ({ question: q, ...d }));
   }, [categorized]);
 
+  // Users who have made questions
+  const activeUsers = useMemo(() => {
+    const userIds = new Set(logs.filter((l) => l.user_id).map((l) => l.user_id!));
+    return profiles.filter((p) => userIds.has(p.id));
+  }, [logs, profiles]);
+
+  // Per-user metrics
+  const userMetrics = useMemo(() => {
+    if (selectedUser === "all") return null;
+    const userLogs = categorized.filter((l) => l.user_id === selectedUser);
+    const cats: Record<string, number> = {};
+    userLogs.forEach((l) => { cats[l._cat] = (cats[l._cat] || 0) + 1; });
+    const topCat = Object.entries(cats).sort(([, a], [, b]) => b - a)[0];
+    return {
+      total: userLogs.length,
+      topCategory: topCat ? topCat[0] : "—",
+      profile: profileMap[selectedUser],
+    };
+  }, [selectedUser, categorized, profileMap]);
+
   const maxQ = topQuestions[0]?.count || 1;
 
   const exportCSV = () => {
-    const header = "Pergunta,Resposta,Categoria,Avaliação,Data\n";
-    const rows = categorized.map((l) =>
-      `"${l.pergunta.replace(/"/g, '""')}","${l.resposta.replace(/"/g, '""')}","${l._cat}","${l.avaliacao || ""}","${new Date(l.created_at).toLocaleString("pt-BR")}"`
-    ).join("\n");
+    const header = "Pergunta,Resposta,Categoria,Avaliação,Usuário,Data\n";
+    const rows = categorized.map((l) => {
+      const userName = l.user_id ? (profileMap[l.user_id]?.nome || "—") : "—";
+      return `"${l.pergunta.replace(/"/g, '""')}","${l.resposta.replace(/"/g, '""')}","${l._cat}","${l.avaliacao || ""}","${userName}","${new Date(l.created_at).toLocaleString("pt-BR")}"`;
+    }).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -236,24 +282,58 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Period filter */}
-        <div className="flex gap-2 flex-wrap">
-          {([["today", "Hoje"], ["week", "Esta semana"], ["month", "Este mês"], ["all", "Tudo"]] as [Period, string][]).map(
-            ([val, label]) => (
-              <button
-                key={val}
-                onClick={() => setPeriod(val)}
-                className={`px-4 py-2 text-xs rounded-xl font-medium transition-all ${
-                  period === val
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-card text-muted-foreground border border-border hover:border-primary/40 hover:text-foreground"
-                }`}
-              >
-                {label}
-              </button>
-            )
-          )}
+        {/* Filters row */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex gap-2 flex-wrap">
+            {([["today", "Hoje"], ["week", "Esta semana"], ["month", "Este mês"], ["all", "Tudo"]] as [Period, string][]).map(
+              ([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setPeriod(val)}
+                  className={`px-4 py-2 text-xs rounded-xl font-medium transition-all ${
+                    period === val
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-card text-muted-foreground border border-border hover:border-primary/40 hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            )}
+          </div>
+
+          {/* User filter */}
+          <div className="flex items-center gap-2 ml-auto">
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="px-3 py-2 text-xs rounded-xl border border-border bg-background outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-normal min-w-[160px]"
+            >
+              <option value="all">Todos os usuários</option>
+              {activeUsers.map((u) => (
+                <option key={u.id} value={u.id}>{u.nome}</option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        {/* User-specific card */}
+        {userMetrics && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-5 flex items-center gap-4">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-foreground">{userMetrics.profile?.nome || "Usuário"}</p>
+              <p className="text-xs text-muted-foreground">{userMetrics.profile?.email}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-display font-bold text-foreground">{userMetrics.total}</p>
+              <p className="text-[10px] text-muted-foreground">perguntas • top: {userMetrics.topCategory}</p>
+            </div>
+          </div>
+        )}
 
         {/* Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -348,7 +428,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* History table */}
+        {/* History table with pagination */}
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <h3 className="font-display text-sm font-bold text-foreground">Histórico de perguntas</h3>
@@ -369,14 +449,16 @@ export default function AdminPage() {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-3 text-xs font-medium text-muted-foreground">Pergunta</th>
                   <th className="text-left py-3 px-3 text-xs font-medium text-muted-foreground hidden md:table-cell">Resposta</th>
+                  <th className="text-left py-3 px-3 text-xs font-medium text-muted-foreground">Usuário</th>
                   <th className="text-left py-3 px-3 text-xs font-medium text-muted-foreground">Categoria</th>
                   <th className="text-left py-3 px-3 text-xs font-medium text-muted-foreground">Avaliação</th>
                   <th className="text-left py-3 px-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Data</th>
                 </tr>
               </thead>
               <tbody>
-                {searched.slice(0, 50).map((l) => {
+                {paginatedLogs.map((l) => {
                   const tag = CATEGORY_TAGS[l._cat] || CATEGORY_TAGS["Outro"];
+                  const userName = l.user_id ? (profileMap[l.user_id]?.nome || "—") : "—";
                   return (
                     <tr key={l.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
                       <td className="py-3 px-3 max-w-[200px]">
@@ -384,6 +466,9 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 px-3 max-w-[250px] hidden md:table-cell">
                         <p className="text-muted-foreground truncate text-xs">{l.resposta}</p>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="text-xs text-foreground font-medium">{userName}</span>
                       </td>
                       <td className="py-3 px-3">
                         <span
@@ -408,9 +493,9 @@ export default function AdminPage() {
                     </tr>
                   );
                 })}
-                {searched.length === 0 && (
+                {paginatedLogs.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                       Nenhum resultado encontrado
                     </td>
                   </tr>
@@ -418,10 +503,28 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
-          {searched.length > 50 && (
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              Mostrando 50 de {searched.length} resultados
-            </p>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-accent disabled:opacity-30 disabled:hover:bg-transparent text-foreground font-medium"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Anterior
+              </button>
+              <span className="text-xs text-muted-foreground">
+                Página {page + 1} de {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-accent disabled:opacity-30 disabled:hover:bg-transparent text-foreground font-medium"
+              >
+                Próximo <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
           )}
         </div>
       </main>
