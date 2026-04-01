@@ -22,6 +22,7 @@ export type Database = {
           id: string
           pergunta: string
           resposta: string
+          user_id: string | null
         }
         Insert: {
           avaliacao?: string | null
@@ -30,6 +31,7 @@ export type Database = {
           id?: string
           pergunta: string
           resposta: string
+          user_id?: string | null
         }
         Update: {
           avaliacao?: string | null
@@ -38,6 +40,28 @@ export type Database = {
           id?: string
           pergunta?: string
           resposta?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
         }
         Relationships: []
       }
