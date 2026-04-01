@@ -17,6 +17,7 @@ const SUGGESTIONS = [
 ];
 
 export default function ChatPage() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
