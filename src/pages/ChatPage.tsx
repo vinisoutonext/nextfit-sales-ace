@@ -95,7 +95,7 @@ export default function ChatPage() {
       if (assistantContent) {
         const { data, error } = await supabase
           .from("logs")
-          .insert({ pergunta: input, resposta: assistantContent })
+          .insert({ pergunta: input, resposta: assistantContent, user_id: user?.id })
           .select("id")
           .single();
 
