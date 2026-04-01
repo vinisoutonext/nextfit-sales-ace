@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChatMessage, TypingIndicator } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import nextfitLogo from "@/assets/nextfit-logo.png";
 import { Sparkles } from "lucide-react";
