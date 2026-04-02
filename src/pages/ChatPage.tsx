@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ChatMessage, TypingIndicator } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,12 +21,20 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isLoading]);
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
+
+  const resetChat = useCallback(() => {
+    setMessages([]);
+    setIsLoading(false);
+  }, []);
 
   const handleSend = async (input: string) => {
     const userMsg: Msg = { role: "user", content: input };
@@ -116,27 +124,33 @@ export default function ChatPage() {
     }
   };
 
+  // Expose resetChat for parent
+  useEffect(() => {
+    (window as any).__resetChat = resetChat;
+    return () => { delete (window as any).__resetChat; };
+  }, [resetChat]);
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div ref={scrollRef} className="flex-1 overflow-y-auto chat-scroll">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-page-in">
             <div className="mb-6">
               <div className="relative inline-flex items-center justify-center">
-                <div className="absolute inset-0 rounded-2xl bg-primary/5 scale-150" />
+                <div className="absolute inset-0 rounded-2xl bg-primary/5 scale-[2] logo-glow" />
                 <img
                   src={nextfitLogo}
                   alt="Next Fit"
-                  width={52}
-                  height={52}
-                  className="rounded-2xl relative"
+                  width={56}
+                  height={56}
+                  className="rounded-2xl relative shadow-lg"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-4 w-4 text-primary/60" />
-              <span className="text-[11px] font-medium tracking-widest uppercase text-primary/60">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-primary/50" />
+              <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-primary/50">
                 Mentor de Vendas
               </span>
             </div>
@@ -144,35 +158,37 @@ export default function ChatPage() {
             <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mb-2 leading-tight">
               Em que posso te ajudar?
             </h2>
-            <p className="text-muted-foreground text-sm font-light max-w-sm mb-8 leading-relaxed">
+            <p className="text-muted-foreground text-sm font-light max-w-sm mb-10 leading-relaxed">
               Playbook, objeções, concorrência e produto — tudo na ponta dos dedos.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-2 max-w-md">
-              {SUGGESTIONS.map((s) => (
+            <div className="flex flex-wrap justify-center gap-3 max-w-lg">
+              {SUGGESTIONS.map((s, i) => (
                 <button
                   key={s.text}
                   onClick={() => handleSend(s.text)}
-                  className="text-[13px] px-3.5 py-2 rounded-xl border border-chip-border bg-chip text-chip-text hover:border-primary hover:bg-primary/[0.08] font-normal inline-flex items-center gap-1.5"
+                  className="text-[13px] px-4 py-3 rounded-xl border border-chip-border bg-chip text-chip-text hover:border-primary hover:bg-primary/[0.06] hover:shadow-md font-normal inline-flex items-center gap-2 hover-lift animate-stagger-in"
+                  style={{ animationDelay: `${i * 100 + 200}ms` }}
                 >
-                  <span>{s.emoji}</span>
+                  <span className="text-base">{s.emoji}</span>
                   <span>{s.text}</span>
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto py-4">
+          <div className="max-w-3xl mx-auto py-6">
             {messages.map((msg, i) => (
               <ChatMessage key={i} role={msg.role} content={msg.content} logId={msg.logId} />
             ))}
             {isLoading && !messages.some((m, i) => m.role === "assistant" && i === messages.length - 1) && (
               <TypingIndicator />
             )}
+            <div ref={bottomRef} />
           </div>
         )}
       </div>
-      <ChatInput onSend={handleSend} disabled={isLoading} />
+      <ChatInput onSend={handleSend} disabled={isLoading} isTyping={isLoading} />
     </div>
   );
 }

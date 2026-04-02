@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Menu } from "lucide-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import nextfitLogo from "@/assets/nextfit-logo.png";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+interface AppLayoutProps {
+  children: React.ReactNode;
+  onNewChat?: () => void;
+}
+
+export function AppLayout({ children, onNewChat }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="h-screen flex w-full overflow-hidden">
-      <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AppSidebar 
+        open={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+        onNewChat={onNewChat}
+      />
 
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
         {/* Mobile header */}

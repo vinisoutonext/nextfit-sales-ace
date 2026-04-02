@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/AppLayout";
 import ChatPage from "@/pages/ChatPage";
 
 const Index = () => (
-  <AppLayout>
+  <AppLayout onNewChat={() => (window as any).__resetChat?.()}>
     <ChatPage />
   </AppLayout>
 );
