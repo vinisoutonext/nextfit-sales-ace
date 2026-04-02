@@ -1,59 +1,94 @@
 
 
-## Plano de Implementação
+## Upgrade Profissional — Escalar para 80 Colaboradores
 
-### 1. Estruturar respostas da IA (resposta rápida + explicação)
+### Visão Geral
 
-Atualizar o `SYSTEM_PROMPT` na Edge Function para instruir a IA a sempre responder em dois blocos:
-- **TL;DR** (resposta rápida em 1-3 bullets para uso em call)
-- **Detalhamento** (explicação completa com formatação rica)
+O app atual funciona, mas precisa de polish, features de equipe e UX profissional para 80 pessoas usarem no dia a dia. O plano cobre: sidebar com logout e info do usuário, chat redesenhado com nova conversa, tela de login polida, admin dashboard completo, e melhorias gerais de UX.
 
-Arquivo: `supabase/functions/nextfit-chat/index.ts`
+---
 
-### 2. Reduzir sugestões na tela inicial para 2
+### 1. Sidebar Profissional com Contexto do Usuário
 
-Atualizar o array `SUGGESTIONS` em `ChatPage.tsx` para conter apenas:
-- "Quais são os principais diferenciais da Next Fit?"
-- "O que falar no começo de uma ligação?"
+**Arquivo:** `src/components/AppSidebar.tsx`
 
-### 3. Sistema de login (identificação de usuários)
+- Adicionar seção no footer com avatar (iniciais), nome e email do usuário logado
+- Botão de logout integrado
+- Botão "Nova conversa" no topo (limpa mensagens do chat)
+- Visual mais rico: ícones refinados, hover states, divisores sutis
 
-**Banco de dados:**
-- Criar tabela `profiles` (id UUID ref auth.users, nome, email, created_at) com RLS
-- Adicionar coluna `user_id` (UUID, nullable) na tabela `logs` referenciando auth.users
-- Habilitar auto-confirm de email para simplificar o fluxo (login interno, não público)
+### 2. Chat — Nova Conversa + UX Polida
 
-**Frontend:**
-- Criar página de login/cadastro (`src/pages/AuthPage.tsx`) com email + senha
-- Criar hook `useAuth` ou context para gerenciar sessão
-- Proteger a rota `/` — redirecionar para `/auth` se não logado
-- Salvar `user_id` junto com cada log ao enviar pergunta no chat
+**Arquivo:** `src/pages/ChatPage.tsx`
 
-Arquivos: nova migração SQL, `src/pages/AuthPage.tsx` (novo), `src/App.tsx`, `src/pages/ChatPage.tsx`
+- Botão "Nova conversa" (pode ser acionado pela sidebar) que reseta o estado
+- Tela de boas-vindas mais impactante: ícone maior com glow animado, subtítulo mais confiante, chips de sugestão com hover mais rico (scale + shadow sutil)
+- Área de mensagens com max-width maior (3xl) para aproveitar telas grandes
+- Scroll suave automático com `scrollIntoView({ behavior: 'smooth' })`
 
-### 4. Histórico de perguntas paginado (10 por página)
+### 3. ChatMessage — Cards Mais Ricos
 
-Na seção "Histórico de perguntas" do `AdminPage.tsx`:
-- Exibir 10 registros por página (em vez dos 50 atuais)
-- Adicionar navegação com setas (anterior/próximo) e indicador de página
-- Manter busca por texto funcionando com a paginação
+**Arquivo:** `src/components/ChatMessage.tsx`
 
-### 5. Dashboard com filtros por pessoa
+- Card de resposta rápida com borda lateral colorida (accent bar à esquerda)
+- Botão de copiar resposta rápida (ícone clipboard, feedback "Copiado!")
+- Detalhamento com transição mais suave e ícone animado
+- Bolha do usuário com gradiente sutil ao invés de cor flat
+- Feedback (thumbs) sempre visível em mobile, hover em desktop
 
-No `AdminPage.tsx`, adicionar:
-- **Filtro por usuário**: dropdown/select com lista de usuários que fizeram perguntas
-- **Card de métricas por pessoa**: ao selecionar um usuário, mostrar total de perguntas dele, categorias mais frequentes
-- **Coluna "Usuário"** na tabela de histórico mostrando o nome de quem perguntou
-- Join com tabela `profiles` para exibir nomes
+### 4. ChatInput — Mais Profissional
 
-### Arquivos afetados
+**Arquivo:** `src/components/ChatInput.tsx`
+
+- Shadow sutil no container quando focado
+- Indicador de "digitando..." quando IA está respondendo (prop `isTyping`)
+- Placeholder rotativo (ex: a cada 5s muda entre dicas de uso)
+
+### 5. Tela de Login Polida
+
+**Arquivo:** `src/pages/AuthPage.tsx`
+
+- Layout split: lado esquerdo com branding (logo grande, tagline, 3 bullet points de valor), lado direito com formulário
+- Em mobile: stacked (branding em cima, form embaixo)
+- Animação sutil de fade-in nos elementos
+- Mensagens de erro mais claras e amigáveis
+
+### 6. Admin Dashboard — Completo e Profissional
+
+**Arquivo:** `src/pages/AdminPage.tsx`
+
+- **Header redesenhado**: título maior, breadcrumb sutil, badge com período selecionado
+- **Cards de métricas**: com mini trend indicator (seta pra cima/baixo comparando com período anterior), ícones com background colorido
+- **Distribuição por categoria**: barras com tooltip ao hover mostrando detalhes
+- **Top 10**: expandir pergunta ao clicar para ver a resposta completa inline
+- **Tabela de histórico**: linhas com hover mais rico, modal ao clicar numa linha para ver pergunta e resposta completas
+- **Filtro por usuário**: visual de select mais bonito com avatar/iniciais
+- **Ranking de usuários**: nova seção mostrando os 5 usuários mais ativos com total de perguntas e categoria mais frequente
+
+### 7. CSS e Design System
+
+**Arquivo:** `src/index.css`
+
+- Adicionar variáveis CSS para gradientes e shadows reutilizáveis
+- Animação de fade-in para páginas (page transition)
+- Hover states mais ricos globalmente
+- Melhorar tipografia dos headers (letter-spacing, line-height)
+
+---
+
+### Arquivos Modificados
 
 | Arquivo | Ação |
 |---|---|
-| `supabase/functions/nextfit-chat/index.ts` | Atualizar SYSTEM_PROMPT com formato TL;DR + Detalhamento |
-| Migração SQL | Criar tabela `profiles`, adicionar `user_id` em `logs`, RLS |
-| `src/pages/AuthPage.tsx` | Criar — tela de login/cadastro |
-| `src/pages/ChatPage.tsx` | Reduzir sugestões para 2; salvar `user_id` nos logs |
-| `src/pages/AdminPage.tsx` | Paginação 10/página; filtro por pessoa; coluna usuário |
-| `src/App.tsx` | Adicionar rota `/auth`, proteger rota `/` |
+| `src/components/AppSidebar.tsx` | Logout, info usuário, botão nova conversa |
+| `src/pages/ChatPage.tsx` | Nova conversa, tela boas-vindas premium, scroll suave |
+| `src/components/ChatMessage.tsx` | Accent bar, copiar, gradiente, feedback mobile |
+| `src/components/ChatInput.tsx` | Shadow focus, placeholder rotativo |
+| `src/pages/AuthPage.tsx` | Layout split com branding |
+| `src/pages/AdminPage.tsx` | Redesign completo, ranking usuários, modal detalhes |
+| `src/index.css` | Variáveis, animações, hover states |
+
+### Resultado
+
+Uma ferramenta que parece um produto SaaS profissional, pronta para 80 pessoas usarem diariamente com confiança.
 
